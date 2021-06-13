@@ -188,6 +188,11 @@ cost_rf<-train(learner_rf,zadanieRegresja,subset = train.set)
 fitted_rf<-predict(cost_rf,zadanieRegresja,subset=test.set)
 maeRF<- mean( abs(fitted_rf$data$truth-fitted_rf$data$response) )
 
+learner_rpart<-makeLearner("regr.rpart",id="rpart",fix.factors.prediction = TRUE)
+cost_rpart<-train(learner_rpart,zadanieRegresja,subset = train.set)
+fitted_rpart<-predict(cost_rpart,zadanieRegresja,subset=test.set)
+maeRPART<- mean( abs(fitted_rpart$data$truth-fitted_kknn$data$response) )
+
 learner_kknn<-makeLearner("regr.kknn",id="kknn",fix.factors.prediction = TRUE)
 cost_kknn<-train(learner_kknn,zadanieRegresja,subset = train.set)
 fitted_kknn<-predict(cost_kknn,zadanieRegresja,subset=test.set)
@@ -203,8 +208,15 @@ cost_lm<-train(learner_lm,zadanieRegresja,subset = train.set)
 fitted_lm<-predict(cost_lm,zadanieRegresja,subset=test.set)
 maeLM<- mean( abs(fitted_lm$data$truth-fitted_lm$data$response) )
 
-cost_benchmark<- mlr::benchmark(list(learner_rf,learner_lm,learner_svm, learner_kknn),resamplings = cv10,measures = mae,tasks = zadanieRegresja)
+cost_benchmark<- mlr::benchmark(list(learner_rf,learner_lm,learner_svm, learner_kknn, learner_rpart),resamplings = cv10,measures = mae,tasks = zadanieRegresja)
 plotBMRBoxplots(cost_benchmark)
+
+ctrl<-makeTuneControlRandom(maxit =  10)
+rdesc<-makeResampleDesc("CV",iters=3)
+params<-makeParamSet(makeIntegerParam("ntree",500,800) )
+resKK<-tuneParams(learner_rf,task=zadanieRegresja,resampling = rdesc,par.set = params,control=ctrl,measures = mae)
+learner_rf_tuned<-makeLearner("regr.randomForest",id="rftuned",fix.factors.prediction = TRUE)
+learner_rf_tuned<-setHyperPars(learner_rf_tuned,par.vals = resKK$x)
 
 
 require(rcompanion)
